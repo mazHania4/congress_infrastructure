@@ -1,0 +1,63 @@
+
+services:
+
+  # ---------- API GATEWAY ----------
+  api-gateway:
+    image: nginx:alpine
+    container_name: api-gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./api-gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - reports-service
+      - attendance-service
+    restart: unless-stopped
+
+
+  # ---------- REPORTS SERVICE ----------
+  reports-service:
+    build: ./reports-service
+    container_name: reports-service
+    env_file:
+      - ./reports-service/service.env
+    environment:
+      JAVA_OPTS: -Xms128m -Xmx256m
+    depends_on:
+      - reports-db
+    restart: unless-stopped
+
+  reports-db:
+    image: postgres:16
+    container_name: reports-db
+    env_file:
+      - ./reports-service/db.env
+    volumes:
+      - reports-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # ---------- ATTENDANCE SERVICE ----------
+  attendance-service:
+    build: ./attendance-service
+    container_name: attendance-service
+    env_file:
+      - ./attendance-service/service.env
+    environment:
+      JAVA_OPTS: -Xms128m -Xmx256m
+    depends_on:
+      - attendance-db
+    restart: unless-stopped
+
+  attendance-db:
+    image: postgres:16
+    container_name: attendance-db
+    env_file:
+      - ./attendance-service/db.env
+    volumes:
+      - attendance-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  reports-db-data:
+  attendance-db-data:
+
